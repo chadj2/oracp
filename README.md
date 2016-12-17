@@ -297,7 +297,7 @@ test {
 
 ## Author
 
-- Chad Juliano <@chadj2>
+- [Chad Juliano](https://github.com/chadj2)
 
 ## License
 
