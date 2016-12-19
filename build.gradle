@@ -9,22 +9,28 @@
  * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
  */
  
-buildscript {
-	repositories {
-    	maven {
-      		url 'https://plugins.gradle.org/m2/'
-   		}
-  	}
-  	dependencies {
-    	classpath group: 'gradle.plugin.edu.sc.seis.gradle', name: 'launch4j', version: '2.1.0'
-  	}
+plugins {
+	id 'java'
+	id 'edu.sc.seis.launch4j' version '2.1.0'
+	//id 'org.kordamp.markdown.convert' version '1.0.0'
+	id 'net.nemerosa.versioning' version '1.7.1'
 }
 
-apply plugin: 'java'
-apply plugin: 'edu.sc.seis.launch4j'
-
-sourceCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 version = '1.0'
+
+import java.text.SimpleDateFormat
+
+ext {
+	Date buildTimeAndDate = new Date()
+    buildDate = new SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
+    buildTime = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
+    buildJVM = (System.properties['java.version'] 
+    	+ " (" + System.properties['java.vendor'] 
+    	+ " " + System.properties['java.vm.version'] + ")")
+    buildUser = System.properties['user.name']
+}
 
 repositories {
     jcenter()
@@ -69,13 +75,28 @@ test {
     }
 }
 
+
 jar {
     manifest {
-        attributes 'Implementation-Title': 'ORACP File Transfer Utility',
-                   'Implementation-Version': version,
-                   'Main-Class': 'org.oracp.OcpMain'
+        attributes (
+            'Built-By': project.buildUser,
+            'Created-By': project.buildJVM,
+            'Build-Date': project.buildDate,
+            'Build-Time': project.buildTime,
+            'Build-Revision': versioning.info.commit,
+            'Specification-Title': project.name,
+            'Specification-Version': project.version,
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Main-Class': 'org.oracp.OcpMain' )
+    }    
+    
+    metaInf {
+        from '.'
+        include 'LICENSE*'
     }
 }
+
 
 task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
 	group = 'launch4j'
@@ -104,3 +125,10 @@ task install(type: Copy) {
 		from jar 
 	}
 }
+
+
+//markdownToHtml {
+//	configuration = [fencedCodeBlocks: true]
+//	outputDir = file( "${project.projectDir}/launch" )
+//	
+//}
