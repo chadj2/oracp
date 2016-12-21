@@ -9,18 +9,20 @@
  * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
  */
  
+
 plugins {
 	id 'java'
 	id 'edu.sc.seis.launch4j' version '2.1.0'
-	//id 'org.kordamp.markdown.convert' version '1.0.0'
 	id 'net.nemerosa.versioning' version '1.7.1'
 }
 
+
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
-version = '1.0'
+version = '1.0.0'
 
 import java.text.SimpleDateFormat
+
 
 ext {
 	Date buildTimeAndDate = new Date()
@@ -30,7 +32,9 @@ ext {
     	+ " (" + System.properties['java.vendor'] 
     	+ " " + System.properties['java.vm.version'] + ")")
     buildUser = System.properties['user.name']
+    releaseDir = file('release')
 }
+
 
 repositories {
     jcenter()
@@ -49,6 +53,7 @@ repositories {
     }
 }
 
+
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.21'
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
@@ -62,15 +67,13 @@ dependencies {
     compile group: 'com.oracle.jdbc', name: 'ojdbc7', version: '12.1.0.2'
 }
 
+
 test {
     filter {
         //don't include tests requiring a DB connection.
         includeTestsMatching "*.T01_testHelp"
     }
-
     testLogging {
-        // set options for log level LIFECYCLE
-        //-exceptionFormat "full"
     	showStandardStreams true
     }
 }
@@ -84,13 +87,12 @@ jar {
             'Build-Date': project.buildDate,
             'Build-Time': project.buildTime,
             'Build-Revision': versioning.info.commit,
-            'Specification-Title': project.name,
+            'Specification-Title': 'ORACP - Database Copy utility',
             'Specification-Version': project.version,
-            'Implementation-Title': project.name,
+            'Implementation-Title': 'org.oracp',
             'Implementation-Version': project.version,
             'Main-Class': 'org.oracp.OcpMain' )
     }    
-    
     metaInf {
         from '.'
         include 'LICENSE*'
@@ -99,9 +101,9 @@ jar {
 
 
 task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
-	group = 'launch4j'
-	description = 'Create the oracp.exe launcher.'
+	group = 'release'
 	outfile = 'oracp.exe'
+	description = "Create the ${outfile} launcher."
     mainClassName = 'org.oracp.OcpMain'
 	fileDescription = 'ORACP Copy utility'
     icon = "${project.projectDir}/images/oracp.ico"
@@ -111,14 +113,14 @@ task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
    	textVersion = project.version
 }
 
-task install(type: Copy) {
-	group = 'build'
-	description = 'Copy executable and dependenciess to launcher directory.'
-	dependsOn build
-	destinationDir = file( "${project.projectDir}/launch" )
-	into( '.' ) {
-		from createLaunch4j	
-		include '*.exe'
+
+task buildRelease(type: Copy) {
+	group = 'release'
+	description = 'Copy executable and dependenciess to release directory.'
+		
+	destinationDir = project.releaseDir
+	from createLaunch4j.outputs.files.filter { 
+		exclude '*.jar'
 	}
 	into('lib') {
 		from configurations.runtime
@@ -127,8 +129,14 @@ task install(type: Copy) {
 }
 
 
-//markdownToHtml {
-//	configuration = [fencedCodeBlocks: true]
-//	outputDir = file( "${project.projectDir}/launch" )
-//	
-//}
+task cleanRelease(type: Delete) {
+	group = 'release'
+	description = 'Delete build products from release directory.'
+	
+	FileTree _files = buildRelease.outputs.files.asFileTree.matching { 
+		include '**/*.jar'
+		include '*.exe'
+	}
+	//_files.each { println "out: ${it}"}
+	delete _files
+}

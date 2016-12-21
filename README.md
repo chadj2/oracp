@@ -136,7 +136,7 @@ Important configuration notes:
 The launcher includes a Gradle script and a directory containing all jar dependencies.
 
 ```sh
-[~/oracp/launch]$ ll
+[~/oracp/release]$ ll
 total 4.2M
 drwxr-xr-x 2 atl101 dba 4.0K Dec 13 22:40 jars/
 -rw-r--r-- 1 atl101 dba 2.0K Dec 13 23:07 build.gradle
@@ -165,7 +165,7 @@ executable JAR file.
 Gradle can show the tasks that are defined for the launcher:
 
 ```sh
-[~/oracp/launch]$ gradle tasks
+[~/oracp/release]$ gradle tasks
 :launch:tasks
 
 OcpExec tasks
@@ -182,12 +182,12 @@ ocpPut - Put a file to APP_DUMP_DIR: (gradle ocpPut -Pfile=FILEPATH)
 The following example shows the syntax for the **ocpPut** task.
 
 ```sh
-[~/oracp/launch]$ gradle -q ocpGet -Pfile=expdp_xref116_v4.dmp
+[~/oracp/release]$ gradle -q ocpGet -Pfile=expdp_xref116_v4.dmp
 Opening Connection...
 Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
 * Starting task: GET
 Source: APP_DUMP_DIR/expdp_xref116_v4.dmp (4.14 MB)
-Destination: <./oracp/launch/expdp_xref116_v4.dmp>
+Destination: <./oracp/release/expdp_xref116_v4.dmp>
   0.75% (31/4240 KB) (186.04 KB/sec)
   100.00% (4240/4240 KB) (50095.25 KB/sec)
 Transfer Complete!
@@ -196,8 +196,8 @@ Transfer Complete!
 ## Using the Executable
 
 The below examples show the arguments passed if you are using the executable JAR 
-(**./launch/jars/oracp-1.0.jar**) or the **launch4j** generated executable 
-(**./launch/oracp.exe**).
+(**./release/jars/oracp-1.0.jar**) or the **launch4j** generated executable 
+(**./release/oracp.exe**).
 
 *Note: The launch4j executable only works on Windows.*
 
