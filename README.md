@@ -63,6 +63,21 @@ You must choose one of the following tasks:
    get FILENAME DEST : Transfer a file from the database to a local directory.
    put FILENAME      : Transfer a local file to a database directory.
 ```
+## Installation
+
+As an alternative to building from source you can [download the latest release][LATEST-RELEASE]. The release comes with the following execution options:
+
+[LATEST-RELEASE]: <https://github.com/chadj2/oracp/releases/latest>
+
+* [oracp.exe Executable](#using-the-executable): This is a launch4j executable that only works on Windows.
+* [Gradle Launcher](#using-the-gradle-launcher): This is a gradle launcher script that works on all platforms.
+
+Prerequisites are:
+* [Java JRE 1.8][JRE-DOWNLOAD]
+* Gradle 2.1 or greater for using the [launcher](#using-the-gradle-launcher). (see [Gradle Installation](#gradle-installation))
+* [Oracle JDBC Driver](#oracle-jdbc-driver). You should put the ojdbc7.jar under the lib directrory.
+
+[JRE-DOWNLOAD]: <http://www.oracle.com/technetwork/java/javase/downloads/index.html>
 
 ## Building
 
