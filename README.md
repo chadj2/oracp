@@ -14,6 +14,7 @@ example it can transfer a datapump dump file before running the import or export
 ## Table of Contents
 
 - [Features](#features)
+- [Installation](#installation)
 - [Building](#building)
     - [Gradle Installation](#gradle-installation)
     - [Oracle JDBC Driver](#oracle-jdbc-driver)
@@ -74,8 +75,8 @@ As an alternative to building from source you can [download the latest release][
 
 Prerequisites are:
 * [Java JRE 1.8][JRE-DOWNLOAD]
-* Gradle 2.1 or greater for using the [launcher](#using-the-gradle-launcher). (see [Gradle Installation](#gradle-installation))
-* [Oracle JDBC Driver](#oracle-jdbc-driver). You should put the ojdbc7.jar under the lib directrory.
+* Gradle 2.1 or greater for using the launcher. (see [Gradle Installation](#gradle-installation))
+* [Oracle JDBC Driver](#oracle-jdbc-driver). You should put the **ojdbc7.jar** under the lib directrory.
 
 [JRE-DOWNLOAD]: <http://www.oracle.com/technetwork/java/javase/downloads/index.html>
 
