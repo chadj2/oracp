@@ -99,7 +99,7 @@ have 2 options:
 	```
 
 2. Download [ojdbc7.jar][ORACLE-JDBC] manually. You will need to place the file in 
-	**./lib** swap the comments on the below lines in **build.gradle**.
+	**./lib** and swap the comments on the below lines in **build.gradle**.
   	
   	```gradle
 	//compile files('lib/ojdbc7.jar')
