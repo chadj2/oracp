@@ -8,7 +8,7 @@
  *
  * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
  */
- 
+
 
 plugins {
 	id 'java'
@@ -28,8 +28,8 @@ ext {
 	Date buildTimeAndDate = new Date()
     buildDate = new SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
     buildTime = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
-    buildJVM = (System.properties['java.version'] 
-    	+ " (" + System.properties['java.vendor'] 
+    buildJVM = (System.properties['java.version']
+    	+ " (" + System.properties['java.vendor']
     	+ " " + System.properties['java.vm.version'] + ")")
     buildUser = System.properties['user.name']
     releaseDir = file('release')
@@ -38,14 +38,14 @@ ext {
 
 repositories {
     jcenter()
-    maven {        
-		// We use the https://maven.oracle.com repository to download ojdbc.jar. Unfortunately 
+    maven {
+		// We use the https://maven.oracle.com repository to download ojdbc.jar. Unfortunately
 		// the type of authentication it uses is not supported by Gradle. As an alternative
 		// we can use the one below.
        	// NOTE: You may see warnings during the download but that does not mean it failed.
         url 'https://www.oracle.com/content/secure/maven/content'
 
-        // You will need to enter an OTN login here. 
+        // You will need to enter an OTN login here.
         credentials {
             username 'user'
             password 'password'
@@ -59,10 +59,10 @@ dependencies {
     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.3.1'
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    
-    // If you give up getting ojdbc7.jar to download from maven.oracle.com you can manually 
+
+    // If you give up getting ojdbc7.jar to download from maven.oracle.com you can manually
     // download the file copy it to ./launch/lib and switch the dependency line below.
-    
+
   	//compile files('lib/ojdbc7.jar')
     compile group: 'com.oracle.jdbc', name: 'ojdbc7', version: '12.1.0.2'
 }
@@ -92,7 +92,7 @@ jar {
             'Implementation-Title': 'org.oracp',
             'Implementation-Version': project.version,
             'Main-Class': 'org.oracp.OcpMain' )
-    }    
+    }
     metaInf {
         from '.'
         include 'LICENSE*'
@@ -114,17 +114,33 @@ task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
 }
 
 
-task buildRelease(type: Copy) {
+task copyRelease(type: Copy) {
 	group = 'release'
-	description = 'Copy executable and dependenciess to release directory.'
-		
+	description = 'Copy executable and dependenciess to release directory without ojdbc7.'
 	destinationDir = project.releaseDir
-	from createLaunch4j.outputs.files.filter { 
-		exclude '*.jar'
+
+	eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
+
+	from(createLaunch4j.outputs) {
+		include '*.exe'
 	}
+
 	into('lib') {
-		from configurations.runtime
-		from jar 
+		from jar.outputs.files
+		from configurations.runtime.files { dep -> dep.name != 'ojdbc7' }
+	}
+}
+
+
+task copyOjdbc(type: Copy, dependsOn: copyRelease) {
+	group = 'release'
+	description = 'Copy required ojdbc7 dependencies.'
+	destinationDir = project.releaseDir
+
+	eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
+
+	into('lib') {
+		from configurations.runtime.files { dep -> dep.name == 'ojdbc7' }
 	}
 }
 
@@ -132,11 +148,11 @@ task buildRelease(type: Copy) {
 task cleanRelease(type: Delete) {
 	group = 'release'
 	description = 'Delete build products from release directory.'
-	
-	FileTree _files = buildRelease.outputs.files.asFileTree.matching { 
+
+	delete copyRelease.outputs.files.asFileTree.matching {
 		include '**/*.jar'
 		include '*.exe'
 	}
-	//_files.each { println "out: ${it}"}
-	delete _files
+
+	targetFiles.each { file -> println "DELETE: ${relativePath(file)}"}
 }
