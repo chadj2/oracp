@@ -11,9 +11,9 @@
 
 
 plugins {
-	id 'java'
-	id 'edu.sc.seis.launch4j' version '2.1.0'
-	id 'net.nemerosa.versioning' version '1.7.1'
+    id 'java'
+    id 'edu.sc.seis.launch4j' version '2.1.0'
+    id 'net.nemerosa.versioning' version '1.7.1'
 }
 
 
@@ -25,24 +25,25 @@ import java.text.SimpleDateFormat
 
 
 ext {
-	Date buildTimeAndDate = new Date()
+    Date buildTimeAndDate = new Date()
     buildDate = new SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
     buildTime = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
     buildJVM = (System.properties['java.version']
-    	+ " (" + System.properties['java.vendor']
-    	+ " " + System.properties['java.vm.version'] + ")")
+        + " (" + System.properties['java.vendor']
+        + " " + System.properties['java.vm.version'] + ")")
     buildUser = System.properties['user.name']
-    releaseDir = file('release')
+    stageDir = file('./stage')
+    releaseDir = file('./release')
 }
 
 
 repositories {
     jcenter()
     maven {
-		// We use the https://maven.oracle.com repository to download ojdbc.jar. Unfortunately
-		// the type of authentication it uses is not supported by Gradle. As an alternative
-		// we can use the one below.
-       	// NOTE: You may see warnings during the download but that does not mean it failed.
+        // We use the https://maven.oracle.com repository to download ojdbc.jar. Unfortunately
+        // the type of authentication it uses is not supported by Gradle. As an alternative
+        // we can use the one below.
+        // NOTE: You may see warnings during the download but that does not mean it failed.
         url 'https://www.oracle.com/content/secure/maven/content'
 
         // You will need to enter an OTN login here.
@@ -63,7 +64,7 @@ dependencies {
     // If you give up getting ojdbc7.jar to download from maven.oracle.com you can manually
     // download the file copy it to ./launch/lib and switch the dependency line below.
 
-  	//compile files('lib/ojdbc7.jar')
+    //compile files('lib/ojdbc7.jar')
     compile group: 'com.oracle.jdbc', name: 'ojdbc7', version: '12.1.0.2'
 }
 
@@ -74,7 +75,7 @@ test {
         includeTestsMatching "*.T01_testHelp"
     }
     testLogging {
-    	showStandardStreams true
+        showStandardStreams true
     }
 }
 
@@ -101,58 +102,70 @@ jar {
 
 
 task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
-	group = 'release'
-	outfile = 'oracp.exe'
-	description = "Create the ${outfile} launcher."
+    group = 'release'
+    outfile = 'oracp.exe'
+    description = "Create the ${outfile} launcher."
     mainClassName = 'org.oracp.OcpMain'
-	fileDescription = 'ORACP Copy utility'
+    fileDescription = 'ORACP Copy utility'
     icon = "${project.projectDir}/images/oracp.ico"
     headerType = 'console'
-	copyright = '2016'
+    copyright = '2016'
     dontWrapJar = true
-   	textVersion = project.version
+    textVersion = project.version
+}
+
+
+task copyStage(type: Copy) {
+    group = 'release'
+    description = 'Copy executable and dependenciess to stage directory without ojdbc7.'
+    destinationDir = project.stageDir
+
+    eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
+
+    from(createLaunch4j.outputs) {
+        include '*.exe'
+    }
+
+    into('lib') {
+        from jar.outputs.files
+        from configurations.runtime.files
+    }
+}
+
+task cleanStage(type: Delete) {
+    group = 'release'
+    description = 'Delete build products from stage directory.'
+
+    delete copyStage.outputs.files.asFileTree.matching {
+        include '**/*.jar'
+        include '*.exe'
+    }
+
+    doLast {
+        targetFiles.each { file -> println "DELETE: ${relativePath(file)}"}
+    }
 }
 
 
 task copyRelease(type: Copy) {
-	group = 'release'
-	description = 'Copy executable and dependenciess to release directory without ojdbc7.'
-	destinationDir = project.releaseDir
+    group = 'release'
+    description = 'Copy files to release directory.'
+    destinationDir = new File(project.releaseDir,"${project.name}-${project.version}")
 
-	eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
+    eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
 
-	from(createLaunch4j.outputs) {
-		include '*.exe'
-	}
+    from(project.stageDir) {
+    	include '*.html'
+    	include '*.sql'
+    	include '*.gradle'
+    }
 
-	into('lib') {
-		from jar.outputs.files
-		from configurations.runtime.files { dep -> dep.name != 'ojdbc7' }
-	}
-}
+    from(createLaunch4j.outputs) {
+        include '*.exe'
+    }
 
-
-task copyOjdbc(type: Copy, dependsOn: copyRelease) {
-	group = 'release'
-	description = 'Copy required ojdbc7 dependencies.'
-	destinationDir = project.releaseDir
-
-	eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
-
-	into('lib') {
-		from configurations.runtime.files { dep -> dep.name == 'ojdbc7' }
-	}
-}
-
-
-task cleanRelease(type: Delete) {
-	group = 'release'
-	description = 'Delete build products from release directory.'
-
-	delete copyRelease.outputs.files.asFileTree.matching {
-		include '**/*.jar'
-		include '*.exe'
-	}
-
-	targetFiles.each { file -> println "DELETE: ${relativePath(file)}"}
+    into('lib') {
+        from jar.outputs.files
+        from configurations.runtime.files { dep -> dep.name != 'ojdbc7' }
+    }
 }

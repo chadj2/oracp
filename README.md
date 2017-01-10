@@ -76,7 +76,7 @@ As an alternative to building from source you can [download the latest release][
 Prerequisites are:
 * [Java JRE 1.8][JRE-DOWNLOAD]
 * Gradle 2.1 or greater for using the launcher. (see [Gradle Installation](#gradle-installation))
-* [Oracle JDBC Driver](#oracle-jdbc-driver). You should put the **ojdbc7.jar** under the lib directrory.
+* [Oracle JDBC Driver](#oracle-jdbc-driver). You should put the **ojdbc7.jar** under the lib directory.
 
 [JRE-DOWNLOAD]: <http://www.oracle.com/technetwork/java/javase/downloads/index.html>
 
@@ -133,8 +133,9 @@ Important Gradle targets are:
 * **build**: Compile java sources and create jar file in **./build/libs/**.
 * **test**: Invoke the JUnit test suite.
 * **createLaunch4j**: Create a standalone oracp executable for Windows in **./build/launch4j/**.
-* **copyRelease**: Copy all required dependencies except ojdbc to **./release/**.
-* **copyOjdbc**: Copy all required dependencies including ojdbc to **./release/**.
+* **copyStage**: Copy all required dependencies except ojdbc to **./stage/**.
+* **copyOjdbc**: Copy all required dependencies including ojdbc to **./stage/**.
+* **copyRelease**: Copy all files for release to a directory under **./release/**.
 
 ## Configuration
 
@@ -146,14 +147,14 @@ Important configuration notes:
 	in the [Launcher Configuration](#launcher-configuration) section.
 
 * Before you can run the directory list task you will need to create the **fn_list_dir** function.
-	This file is located under **./release/fn_list_dir.sql**. It must be run as the SYS user.
+	This file is located under **./stage/fn_list_dir.sql**. It must be run as the SYS user.
 
 ### Launcher Configuration
 
 The launcher includes a Gradle script and a directory containing all jar dependencies.
 
 ```sh
-[~/oracp/release]$ ll
+[~/oracp/stage]$ ll
 total 4.2M
 drwxr-xr-x 2 atl101 dba 4.0K Dec 13 22:40 jars/
 -rw-r--r-- 1 atl101 dba 2.0K Dec 13 23:07 build.gradle
@@ -182,7 +183,7 @@ executable JAR file.
 Gradle can show the tasks that are defined for the launcher:
 
 ```sh
-[~/oracp/release]$ gradle tasks
+[~/oracp/stage]$ gradle tasks
 :launch:tasks
 
 OcpExec tasks
@@ -199,12 +200,12 @@ ocpPut - Put a file to APP_DUMP_DIR: (gradle ocpPut -Pfile=FILEPATH)
 The following example shows the syntax for the **ocpPut** task.
 
 ```sh
-[~/oracp/release]$ gradle -q ocpGet -Pfile=expdp_xref116_v4.dmp
+[~/oracp/stage]$ gradle -q ocpGet -Pfile=expdp_xref116_v4.dmp
 Opening Connection...
 Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
 * Starting task: GET
 Source: APP_DUMP_DIR/expdp_xref116_v4.dmp (4.14 MB)
-Destination: <./oracp/release/expdp_xref116_v4.dmp>
+Destination: <./oracp/stage/expdp_xref116_v4.dmp>
   0.75% (31/4240 KB) (186.04 KB/sec)
   100.00% (4240/4240 KB) (50095.25 KB/sec)
 Transfer Complete!
@@ -213,8 +214,8 @@ Transfer Complete!
 ## Using the Executable
 
 The below examples show the arguments passed if you are using the executable JAR
-(**./release/jars/oracp-1.0.jar**) or the **launch4j** generated executable
-(**./release/oracp.exe**).
+(**./stage/jars/oracp-1.0.jar**) or the **launch4j** generated executable
+(**./stage/oracp.exe**).
 
 *Note: The launch4j executable only works on Windows.*
 

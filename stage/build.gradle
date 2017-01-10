@@ -1,0 +1,82 @@
+/**
+ * ORACP - Database Copy utility
+ *
+ *  Copyright 2016 by Chad Juliano
+ *
+ *  Licensed under GNU Lesser General Public License v3.0 only.
+ *  Some rights reserved. See LICENSE.
+ *
+ * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
+ */
+
+def ORACP_GROUP = 'ocpExec'
+description = "Launcher tasks for ORACP utility"
+
+ext {
+    // Edit these connection parameters
+    dbHost = 'test.db.com'
+    dbPort = '1521'
+    dbName = 'SERVICE_NAME'
+    jdbcUser 	= 'USER'
+    jdbcPass 	= 'PASS'
+    dbDirectory = 'APP_DUMP_DIR'
+    dbUrl = "jdbc:oracle:thin:@//${dbHost}:${dbPort}/${dbName}"
+
+    // create the param list
+    ocpBaseArgs = []
+    //ocpBaseArgs += [ '--debug' ]
+    ocpBaseArgs += [ '--url', dbUrl ]
+    ocpBaseArgs += [ '--user', jdbcUser ]
+    ocpBaseArgs += [ '--passwd', jdbcPass ]
+    ocpBaseArgs += [ '--db-dir', dbDirectory ]
+}
+
+task ocpBase(type: JavaExec) {
+    group = ORACP_GROUP
+    description = "Configure for URL: <${dbUrl}>"
+    main = 'org.oracp.OcpMain'
+    classpath = fileTree(dir: "${project.projectDir}/lib")
+    args ocpBaseArgs
+}
+
+// note: that this will invoke the install target in the main project.
+task ocpHelp(dependsOn: ":install") {
+    group = ORACP_GROUP
+    description = "Print command line usage"
+    doLast {
+        ocpBase.ignoreExitValue = true
+        ocpBase.args '--help'
+        ocpBase.execute()
+    }
+}
+
+task ocpList {
+    group = ORACP_GROUP
+    description = "List files in DB directory ${dbDirectory}"
+    doLast {
+        ocpBase.args 'list'
+        ocpBase.execute()
+    }
+}
+
+task ocpGet {
+    group = ORACP_GROUP
+    description = "Get a file from ${dbDirectory}: (gradle -q ocpGet -Pfile=FILENAME)"
+    doLast {
+        ocpBase.args 'get'
+        ocpBase.args project.getProperty('file')
+        ocpBase.args '.'
+        ocpBase.execute()
+    }
+}
+
+task ocpPut {
+    group = ORACP_GROUP
+    description = "Put a file to ${dbDirectory}: (gradle -q ocpPut -Pfile=FILEPATH)"
+    doLast {
+        ocpBase.args '--force'
+        ocpBase.args 'put'
+        ocpBase.args project.getProperty('file')
+        ocpBase.execute()
+    }
+}
