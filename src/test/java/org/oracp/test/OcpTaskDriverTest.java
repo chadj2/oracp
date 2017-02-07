@@ -19,15 +19,11 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.oracp.OcpMain;
+import org.oracp.OcpTaskDriver;
 
-/**
- * @author cjuliano
- * @date 12/2/16 10:11 AM
- */
 @SuppressWarnings("javadoc")
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class OcpMainTest
+public class OcpTaskDriverTest
 {
 
     private String _jdbcUrl  = null;
@@ -45,7 +41,7 @@ public class OcpMainTest
     }
 
     @Test(expected = ParseException.class)
-    public void T01_testHelp()
+    public void t001_help()
             throws Exception
     {
         ArrayList<String> _argList = new ArrayList<>();
@@ -54,7 +50,7 @@ public class OcpMainTest
     }
 
     @Test
-    public void T02_testList()
+    public void t010_list()
             throws Exception
     {
         ArrayList<String> _argList = new ArrayList<>();
@@ -67,7 +63,7 @@ public class OcpMainTest
     }
 
     @Test
-    public void T03_testGet()
+    public void t020_get()
             throws Exception
     {
         ArrayList<String> _argList = new ArrayList<>();
@@ -82,7 +78,7 @@ public class OcpMainTest
     }
 
     @Test
-    public void T03_testPut()
+    public void t030_put()
             throws Exception
     {
         ArrayList<String> _argList = new ArrayList<>();
@@ -101,13 +97,8 @@ public class OcpMainTest
     private static void execTest(ArrayList<String> _argList)
             throws Exception
     {
-//		String[] _args = _argMap.entrySet().stream()
-//				.flatMap(x -> Stream.of(x.getKey(), x.getValue()))
-//				.filter(x -> x != null)
-//				.toArray(String[]::new);
-
         //_argList.add(0, "--debug");
-        OcpMain _testClass = new OcpMain();
+        OcpTaskDriver _testClass = new OcpTaskDriver();
         _testClass.run(_argList.toArray(new String[0]));
     }
 }

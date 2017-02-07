@@ -14,20 +14,15 @@ example it can transfer a datapump dump file before running the import or export
 ## Table of Contents
 
 - [Features](#features)
-- [Installation](#installation)
-- [Building](#building)
-    - [Gradle Installation](#gradle-installation)
-    - [Oracle JDBC Driver](#oracle-jdbc-driver)
-    - [Build Tasks](#build-tasks)
-- [Configuration](#configuration)
-	- [Launcher Configuration](#launcher-configuration)
-- [Using the Gradle Launcher](#using-the-gradle-launcher)
-	- [Launcher Tasks](#launcher-tasks)
-	- [ocpPut Example](#ocpput-example)
-- [Using the Executable](#using-the-executable)
+- [Quick Start](#quick-start)
+- [Task Execution](#task-execution)
     - [List Example](#list-example)
     - [Get Example](#get-example)
     - [Put Example](#put-example)
+- [Building](#building)
+    - [Gradle Installation](#gradle-installation)
+    - [OTN Maven Configuration](#otn-maven-configuration)
+    - [Build Tasks](#build-tasks)
 - [Tests](#tests)
 - [Author](#author)
 - [License](#license)
@@ -48,10 +43,8 @@ script or use the executable JAR file.
 Below is the usage displayed when invoked with the **--help** option.
 
 ```sh
-usage: oracp [OPTIONS] [list|get FILENAME DEST|put FILENAME]
-This program is a command line utility that can perform file operations over an Oracle JDBC
-connection.
-   -d,--debug            turn on debug logging
+usage: oracp [OPTIONS] [get|list|put]
+   -d,--debug            turn on debug messages
    -f,--force            Force overwrite of destination.
    -h,--help             print this message
    -p,--passwd <arg>     DB password
@@ -59,172 +52,50 @@ connection.
    -u,--user <arg>       DB username
       --url <arg>        Oracle JDBC URL (jdbc:oracle:thin:@//hostname:port/service)
 
+ORACP - Database Copy utility (v1.1.0)
+
 You must choose one of the following tasks:
-   list              : List the contents of an oracle Directory Object.
-   get FILENAME DEST : Transfer a file from the database to a local directory.
-   put FILENAME      : Transfer a local file to a database directory.
+   get [REMOTE-FILE] [LOCAL-DIR]...... Transfer a file from the database to a local directory.
+   list............................... List the contents of an oracle Directory Object.
+   put [LOCAL-FILE]................... Transfer a local file to a database directory.
+
+This program is a command line utility to execute file operations over an
+Oracle JDBC connection.
+Contact Chad Juliano<chadj@dallaslife.net> for feedback or assistance.
+
+Terminating: Help option requested
 ```
-## Installation
+## Quick Start
 
-As an alternative to building from source you can [download the latest release][LATEST-RELEASE]. The release comes with the following execution options:
+1. Confirm that you have a copy of [Java 1.8][JRE-DOWNLOAD].
 
-[LATEST-RELEASE]: <https://github.com/chadj2/oracp/releases/latest>
+1. Download the [latest release][LATEST-RELEASE] and extract the archive.
 
-* [oracp.exe Executable](#using-the-executable): This is a launch4j executable that only works on Windows.
-* [Gradle Launcher](#using-the-gradle-launcher): This is a gradle launcher script that works on all platforms.
+1. Download [Oracle JDBC 7][ORACLE-JDBC] **ojdbc7-12.1.0.2.jar** and place it in the extracted lib folder. You may need
+a an [OTN login][OTN-ACCOUNT] if prompted for credentials.
 
-Prerequisites are:
-* [Java JRE 1.8][JRE-DOWNLOAD]
-* Gradle 2.1 or greater for using the launcher. (see [Gradle Installation](#gradle-installation))
-* [Oracle JDBC Driver](#oracle-jdbc-driver). You should put the **ojdbc7.jar** under the lib directory.
+1. If you are running windows execute the [oracp.exe](#using-the-executable) program. If you are on Linux execute
+**oracp.sh**.
+
+1. Before you can run the directory list task you will need to create the **fn_list_dir** function with the included
+create script **fn_list_dir.sql**. It must be run as the SYS user.
 
 [JRE-DOWNLOAD]: <http://www.oracle.com/technetwork/java/javase/downloads/index.html>
-
-## Building
-
-### Gradle Installation
-
-Before you can use this program you will need a [Gradle Installation][GRADLE-DOWNLOAD]. If you
-are behind a proxy then you may need to configure [proxy settings][GRADLE-PROXY].
-
-[GRADLE-DOWNLOAD]: <https://gradle.org/gradle-download/>
-[GRADLE-PROXY]: <https://docs.gradle.org/current/userguide/build_environment.html#sec:accessing_the_web_via_a_proxy>
-
-### Oracle JDBC Driver
-
-Before you can build or run this project you will need a copy of the **ojdbc7.jar** driver. This
-driver can't be included with the distribution because it is covered under the
-[Oracle Technology Network License Agreement][ORACLE-OTN].
-
-[ORACLE-OTN]: <http://www.oracle.com/technetwork/licenses/distribution-license-152002.html>
-
-To get access to the file you will need an [OTN login][OTN-ACCOUNT]. To download the file you
-have 2 options:
-
-1. Edit the Maven section of the **gradle.build** file with your OTN login. When you run the build
-  	target it will download the file from the [Oracle Maven repository][OTN-MAVEN].
-
-	```gradle
-	maven {
-	    url 'https://www.oracle.com/content/secure/maven/content'
-	    credentials {
-	        username 'user'
-	        password 'password'
-	    }
-	}
-	```
-
-2. Download [ojdbc7.jar][ORACLE-JDBC] manually. You will need to place the file in
-	**./lib** and swap the comments on the below lines in **build.gradle**.
-
-  	```gradle
-	//compile files('lib/ojdbc7.jar')
-	compile group: 'com.oracle.jdbc', name: 'ojdbc7', version: '12.1.0.2'
-	```
-
-[OTN-MAVEN]: <https://blogs.oracle.com/dev2dev/entry/how_to_get_oracle_jdbc>
 [ORACLE-JDBC]: <http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html>
-[OTN-ACCOUNT]: https://profile.oracle.com/myprofile/account/create-account.jspx
+[LATEST-RELEASE]: <https://github.com/chadj2/oracp/releases/latest>
+[OTN-ACCOUNT]: <https://profile.oracle.com/myprofile/account/create-account.jspx>
 
-### Build Tasks
+## Task Execution
 
-Important Gradle targets are:
-
-* **build**: Compile java sources and create jar file in **./build/libs/**.
-* **test**: Invoke the JUnit test suite.
-* **createLaunch4j**: Create a standalone oracp executable for Windows in **./build/launch4j/**.
-* **copyStage**: Copy all required dependencies except ojdbc to **./stage/**.
-* **copyOjdbc**: Copy all required dependencies including ojdbc to **./stage/**.
-* **copyRelease**: Copy all files for release to a directory under **./release/**.
-
-## Configuration
-
-Important configuration notes:
-* If you are using the program generated by **launch4j** then there is no configuration necessary
-	because everything is passed on the command line.
-
-* If you are using the Gradle launcher then you will need to edit the launcher script as indicated
-	in the [Launcher Configuration](#launcher-configuration) section.
-
-* Before you can run the directory list task you will need to create the **fn_list_dir** function.
-	This file is located under **./stage/fn_list_dir.sql**. It must be run as the SYS user.
-
-### Launcher Configuration
-
-The launcher includes a Gradle script and a directory containing all jar dependencies.
-
-```sh
-[~/oracp/stage]$ ll
-total 4.2M
-drwxr-xr-x 2 atl101 dba 4.0K Dec 13 22:40 jars/
--rw-r--r-- 1 atl101 dba 2.0K Dec 13 23:07 build.gradle
-```
-
-You should edit **oracp/build.gradle** and configure the following settings for your DB connection.
-
-```gradle
-// Edit these connection parameters
-dbHost = 'slc03qjw.us.oracle.com'
-dbPort = '1521'
-dbName = 'PINDB'
-jdbcUser 	= 'PIN102'
-jdbcPass 	= 'PIN102'
-dbDirectory = 'APP_DUMP_DIR'
-dbUrl = "jdbc:oracle:thin:@//${dbHost}:${dbPort}/${dbName}"
-```
-
-## Using the Gradle Launcher
-
-The gradle launcher is a a convenient and cross-platform alternative to using a shell script or
-executable JAR file.
-
-### Launcher Tasks
-
-Gradle can show the tasks that are defined for the launcher:
-
-```sh
-[~/oracp/stage]$ gradle tasks
-:launch:tasks
-
-OcpExec tasks
--------------
-ocpBase - Configure for URL: <jdbc:oracle:thin:@//oracledb.test.com:1521/PINDB>
-ocpGet - Get a file from APP_DUMP_DIR: (gradle ocpGet -Pfile=FILENAME)
-ocpHelp - Print command line usage
-ocpList - List files in DB directory APP_DUMP_DIR
-ocpPut - Put a file to APP_DUMP_DIR: (gradle ocpPut -Pfile=FILEPATH)
-```
-
-### ocpPut Example
-
-The following example shows the syntax for the **ocpPut** task.
-
-```sh
-[~/oracp/stage]$ gradle -q ocpGet -Pfile=expdp_xref116_v4.dmp
-Opening Connection...
-Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
-* Starting task: GET
-Source: APP_DUMP_DIR/expdp_xref116_v4.dmp (4.14 MB)
-Destination: <./oracp/stage/expdp_xref116_v4.dmp>
-  0.75% (31/4240 KB) (186.04 KB/sec)
-  100.00% (4240/4240 KB) (50095.25 KB/sec)
-Transfer Complete!
-```
-
-## Using the Executable
-
-The below examples show the arguments passed if you are using the executable JAR
-(**./stage/jars/oracp-1.0.jar**) or the **launch4j** generated executable
-(**./stage/oracp.exe**).
-
-*Note: The launch4j executable only works on Windows.*
+The below examples show the arguments passed if you are using the **launch4j** generated executable
+(**oracp.exe**). If running on Linux you should use the provided **oracp.sh** script.
 
 ### List Example
 
 In this example we list the contents of directory **APP_DUMP_DIR**.
 
 ```sh
-$ oracp \
+C:\temp\oracp> oracp \
 	--url jdbc:oracle:thin:@//oracledb.test.com:1521/PINDB \
 	--user PIN102 --passwd PIN102 \
 	--source-dir APP_DUMP_DIR \
@@ -245,7 +116,7 @@ Total 4 files in APP_DUMP_DIR:
 In this example we transfer file **expdp_xref116_v4.dmp** to the current directory **./**.
 
 ```sh
-$ oracp \
+C:\temp\oracp> oracp \
 	--url jdbc:oracle:thin:@//oracledb.test.com:1521/PINDB \
 	--user PIN102 --passwd PIN102 \
 	--source-dir APP_DUMP_DIR \
@@ -273,7 +144,7 @@ Note: The process will fail if the file already exists in the destination. You c
 the **--force** option to override this check.
 
 ```sh
-$ oracp \
+C:\temp\oracp> oracp \
 	--url jdbc:oracle:thin:@//oracledb.test.com:1521/PINDB \
 	--user PIN102 --passwd PIN102 \
 	--source-dir APP_DUMP_DIR \
@@ -288,6 +159,50 @@ Force overwrite of destination file!
   100.00% (178/178 KB) (84.97 KB/sec)
 Transfer Complete!
 ```
+
+## Building
+
+### Gradle Installation
+
+To build this program you will need a [Gradle Installation][GRADLE-DOWNLOAD]. If you are behind a proxy then you may
+need to configure [proxy settings][GRADLE-PROXY].
+
+[GRADLE-DOWNLOAD]: <https://gradle.org/gradle-download/>
+[GRADLE-PROXY]: <https://docs.gradle.org/current/userguide/build_environment.html#sec:accessing_the_web_via_a_proxy>
+
+### OTN Maven Configuration
+
+Before you can build or run this project you will need a copy of the **ojdbc7.jar** driver that can't be included
+because it is covered under the [Oracle Technology Network License Agreement][OTN-LICENSE].
+
+[OTN-LICENSE]: <http://www.oracle.com/technetwork/licenses/distribution-license-152002.html>
+[OTN-ACCOUNT]: <https://profile.oracle.com/myprofile/account/create-account.jspx>
+[OTN-MAVEN]: <https://blogs.oracle.com/dev2dev/entry/how_to_get_oracle_jdbc>
+
+Edit the Maven section of the **gradle.build** file with your [OTN credentials][OTN-ACCOUNT] in the section indicated
+below. When you launch the build target the dirver should be downloaded with the other dependencies.
+
+```gradle
+maven {
+    url 'https://www.oracle.com/content/secure/maven/content'
+    credentials {
+        username 'user'
+        password 'password'
+    }
+}
+```
+
+### Build Tasks
+
+Important Gradle tasks are:
+
+* **build**: Compile java sources and create jar file in **build/libs/**.
+* **test**: Invoke the JUnit test suite.
+* **installOjdbc7Dist**: Copy distribution files without OJDBC into **build/install/oracp-ojdbc7**
+* **installNoOjdbc7Dist**: Copy distribution files with OJDBC into **build/install/oracp-noOjdbc7**
+* **noOjdbc7DistZip**: Create the distribution archive at **build/distributions/oracp-noOjdbc7-1.1.0.zip**
+* **publishMavenJavaPublicationToMavenLocal**: Publish to local Maven repository.
+* **publishMavenJavaPublicationToMavenRepository**: Publish to remote Maven repository.
 
 ## Tests
 

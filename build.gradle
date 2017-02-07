@@ -9,35 +9,14 @@
  * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
  */
 
-
 plugins {
-    id 'java'
-    id 'edu.sc.seis.launch4j' version '2.1.0'
-    id 'net.nemerosa.versioning' version '1.7.1'
+    id 'project-report'
+    id 'ru.vyarus.pom' version '1.1.0'
+    id 'ru.vyarus.github-info' version '1.1.0'
 }
-
-
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
-version = '1.0.0'
-
-import java.text.SimpleDateFormat
-
-
-ext {
-    Date buildTimeAndDate = new Date()
-    buildDate = new SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
-    buildTime = new SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
-    buildJVM = (System.properties['java.version']
-        + " (" + System.properties['java.vendor']
-        + " " + System.properties['java.vm.version'] + ")")
-    buildUser = System.properties['user.name']
-    stageDir = file('./stage')
-    releaseDir = file('./release')
-}
-
 
 repositories {
+    mavenLocal()
     jcenter()
     maven {
         // We use the https://maven.oracle.com repository to download ojdbc.jar. Unfortunately
@@ -54,118 +33,125 @@ repositories {
     }
 }
 
+// include tasks and configuration to bundle this project as a launch4j executable.
+apply from: 'dist/launch4j.gradle'
+apply from: 'dist/debug.gradle'
 
 dependencies {
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.21'
-    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.3.1'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    // this will import slf4j libraries
+    compile group: 'org.taskdriver', name: 'task-driver', version: '1.0.0'
 
     // If you give up getting ojdbc7.jar to download from maven.oracle.com you can manually
     // download the file copy it to ./launch/lib and switch the dependency line below.
 
     //compile files('lib/ojdbc7.jar')
     compile group: 'com.oracle.jdbc', name: 'ojdbc7', version: '12.1.0.2'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    // contains the logback-test.xml file needed on the classpath
+    testRuntime files(project.loggingDir)
+
+    // Note: This is just a placeholder so that launch4j will  add ./lib/config to its classpath.
+    runtime files("${project.distDir}/config")
 }
 
+/**
+ * The below block determines the files that get copied into the distribution.
+ * We create a new distribution called 'launch4j' because 'main' has a different organization.
+ * https://docs.gradle.org/current/userguide/distribution_plugin.html
+ */
+distributions {
+    noOjdbc7 {
+        contents {
+            with(distributions.launch4j.contents)
+            from(project.projectDir) {
+            	include 'LICENSE.*'
+            }
+            from(project.distDir) {
+            	include '*.sql'
+            }
+            into('lib') {
+            	exclude 'config'
+                from configurations.runtime.files { dep -> dep.name != 'ojdbc7' }
+                from(jar.outputs.files)
+            }
+            eachFile() { file -> println "DIST: ${file.path}" }
+        }
+    }
 
+    ojdbc7 {
+        contents {
+    		with(distributions.launch4j.contents)
+            from(project.distDir) {
+            	include '*.sql'
+            }
+            into('lib') {
+            	exclude 'config'
+                from configurations.runtime.files
+                from(jar.outputs.files)
+            }
+            eachFile() { file -> println "DIST: ${file.path}" }
+        }
+    }
+}
+
+/**
+ * Junit test plugin
+ * https://docs.gradle.org/current/dsl/org.gradle.api.tasks.testing.Test.html
+ */
 test {
     filter {
-        //don't include tests requiring a DB connection.
-        includeTestsMatching "*.T01_testHelp"
+        // don't include tests requiring a DB connection.
+        includeTestsMatching '*.t01_help'
     }
     testLogging {
         showStandardStreams true
     }
-}
 
-
-jar {
-    manifest {
-        attributes (
-            'Built-By': project.buildUser,
-            'Created-By': project.buildJVM,
-            'Build-Date': project.buildDate,
-            'Build-Time': project.buildTime,
-            'Build-Revision': versioning.info.commit,
-            'Specification-Title': 'ORACP - Database Copy utility',
-            'Specification-Version': project.version,
-            'Implementation-Title': 'org.oracp',
-            'Implementation-Version': project.version,
-            'Main-Class': 'org.oracp.OcpMain' )
-    }
-    metaInf {
-        from '.'
-        include 'LICENSE*'
+    // listen to standard out and standard error of the test JVM(s)
+    afterTest { descriptor, result ->
+       logger.lifecycle("${descriptor} result: ${result}")
     }
 }
 
-
-task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
-    group = 'release'
-    outfile = 'oracp.exe'
-    description = "Create the ${outfile} launcher."
-    mainClassName = 'org.oracp.OcpMain'
-    fileDescription = 'ORACP Copy utility'
-    icon = "${project.projectDir}/images/oracp.ico"
-    headerType = 'console'
-    copyright = '2016'
-    dontWrapJar = true
-    textVersion = project.version
+/**
+ * from github-info plugin. This adds details to the pom.
+ * https://github.com/xvik/gradle-github-info-plugin
+ */
+github {
+    user 'chadj2'
+    license 'LGPLv3'
 }
 
-
-task copyStage(type: Copy) {
-    group = 'release'
-    description = 'Copy executable and dependenciess to stage directory without ojdbc7.'
-    destinationDir = project.stageDir
-
-    eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
-
-    from(createLaunch4j.outputs) {
-        include '*.exe'
-    }
-
-    into('lib') {
-        from jar.outputs.files
-        from configurations.runtime.files
+/**
+ * from POM plugin. Simplifies pom generation.
+ * https://github.com/xvik/gradle-pom-plugin
+ */
+pom {
+    developers {
+        developer {
+            id 'chadj2'
+            name 'Chad Juliano'
+            email 'chadj@dallaslife.net'
+        }
     }
 }
 
-task cleanStage(type: Delete) {
-    group = 'release'
-    description = 'Delete build products from stage directory.'
-
-    delete copyStage.outputs.files.asFileTree.matching {
-        include '**/*.jar'
-        include '*.exe'
+/**
+ * From the maven-publish plugin.
+ * https://docs.gradle.org/current/userguide/maven_plugin.html
+ */
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
     }
-
-    doLast {
-        targetFiles.each { file -> println "DELETE: ${relativePath(file)}"}
-    }
-}
-
-
-task copyRelease(type: Copy) {
-    group = 'release'
-    description = 'Copy files to release directory.'
-    destinationDir = new File(project.releaseDir,"${project.name}-${project.version}")
-
-    eachFile { file -> println "COPY: ${relativePath(new File(destinationDir, file.path))}" }
-
-    from(project.stageDir) {
-    	include '*.html'
-    	include '*.sql'
-    	include '*.gradle'
-    }
-
-    from(createLaunch4j.outputs) {
-        include '*.exe'
-    }
-
-    into('lib') {
-        from jar.outputs.files
-        from configurations.runtime.files { dep -> dep.name != 'ojdbc7' }
+    repositories {
+        maven {
+            url "$buildDir/repo"
+        }
     }
 }

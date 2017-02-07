@@ -1,5 +1,5 @@
-ORACP - Database Copy utility  
-Copyright 2016 by Chad Juliano
+ORACP - Database Copy utility
+Copyright 2017 by Chad Juliano
 
 @license LGPL-3.0 <https://spdx.org/licenses/LGPL-3.0>
 
@@ -18,6 +18,3 @@ along with this program.  If not, see <https://www.gnu.org/licenses/lgpl.html>.
 
 [LGPL-3.0]: <https://spdx.org/licenses/LGPL-3.0>
 [FSF]: <http://www.fsf.org/>
-
-![](images/lgplv3b-72.png "LGPL-3.0")
-![](images/spdx-72.png "SPDX")

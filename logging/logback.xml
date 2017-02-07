@@ -1,8 +1,7 @@
 <configuration packagingData="true">
 
-    <property name="MSG_INFO_COLOR" value="%highlight(%-5level) %boldYellow(%logger{1}.%-15method)" />
     <property name="MSG_INFO" value="%-5level %logger{1}.%-15method" />
-    <Property name="EX_PATTERN" value="%rootException{5}" />
+    <Property name="EX_PATTERN" value="%xException{5}" />
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -13,7 +12,7 @@
     <logger name="org.oracp" level="INFO"/>
     <logger name="org.oracp.sql" level="INFO"/>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
 

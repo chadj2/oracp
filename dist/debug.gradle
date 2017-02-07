@@ -1,0 +1,101 @@
+/**
+ * $Id: 29565e145c1d9c03ddfea55cb38012bb83c9dad1 $
+ */
+
+task helpLaunch4j {
+    group = 'launch4j'
+    description = 'List some details of createLaunch4j'
+
+    doLast {
+        //createLaunch4j.properties.sort().each { println "properties: ${it}" }
+        configurations.runtime.sort().each { println "orig: ${it}" }
+
+        def outputDir = createLaunch4j.outputDirectory.toPath()
+        println "outputDir: ${outputDir}"
+
+        def libraryDir = createLaunch4j.libraryDirectory.toString()
+        println "libraryDirectory: ${libraryDir}"
+
+        def outFilePath = createLaunch4j.dest.parentFile.toPath()
+        println "outFilePath: ${outFilePath}"
+
+        FileCollection _copyLibraries = createLaunch4j.copyLibraries()
+        _copyLibraries.each { println "copyLibraries: ${it}" }
+    }
+}
+
+task listBlockSummary {
+    group = 'help'
+    description = 'Summarize the contents of project collections'
+
+    doLast
+    {
+        // create a 3 column table of properties with [ class, name, value ]
+        def _propList = project.properties.findResults ()
+        { node ->
+            def _key = node.key
+            def _value = node.value
+
+            // comment this out to get all properties
+            if(!(_value instanceof Collection)) return null
+
+            // filters
+            if(_value == [:]) return null
+            if(_key == 'properties') return null
+
+            def _class = _value.hasProperty('type') ? _value.type : null
+            _class = (_class != null) ? _class : _value.getClass().getName()
+
+            // return a map with 3 pairs
+            return [pClass: _class, pName: _key, pValue: _value]
+        }
+
+        // visit each row in the table adn group by the class
+        _propList.groupBy() { it.pClass }.sort() { it.key }.each()
+        {
+            def _class = it.key
+            def _groupList = it.value
+            println "CLASS: ${_class}"
+
+            _groupList.sort() { it.pName }.each()
+            {
+                def _paramName = it.pName
+                def _paramVal = it.pValue
+
+                if(_paramVal instanceof Collection)
+                {
+                    // this is a collection so recurse
+                    println "+ ${_paramName} ="
+                    _paramVal.collect() { it.hasProperty('name') ? it.name : it.toString() }
+                        .sort().each() { println "++ ${it}" }
+                }
+                else
+                {
+                    println "+ ${_paramName} = ${_paramVal}"
+                }
+            }
+            println ""
+        }
+    }
+}
+
+task listSourceSet {
+    group = 'help'
+    description = 'List the SourceSet configuration.'
+
+    doLast {
+        println 'Main SourceSet:'
+        sourceSets.main.runtimeClasspath.each() { println "classpath: ${it}" }
+        sourceSets.main.resources.collect{ relativePath(it) }.sort().each() { println "resource: ${it}" }
+        println ''
+
+        println 'Test SourceSet:'
+        sourceSets.test.runtimeClasspath.each() { println "classpath: ${it}" }
+        sourceSets.test.resources.collect{ relativePath(it) }.sort().each() { println "resource: ${it}" }
+        println ''
+
+        println 'Configuration testRuntime:'
+        configurations.testRuntime.each()  { println "classpath: ${it}" }
+        println ''
+    }
+}

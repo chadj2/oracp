@@ -1,0 +1,147 @@
+/**
+ * $Id: 29565e145c1d9c03ddfea55cb38012bb83c9dad1 $
+ */
+
+buildscript {
+	repositories {
+	    jcenter()
+	}
+
+	dependencies {
+		classpath group: 'edu.sc.seis.gradle', name: 'launch4j', version: '2.3.0'
+		classpath group: 'net.nemerosa', name: 'versioning', version: '2.5.1'
+	}
+}
+
+/**
+ * The application plugin adds a set of tasks for script generation and distribution.
+ * https://docs.gradle.org/current/userguide/application_plugin.html
+ */
+apply plugin: 'application'
+
+// plugin to build the launch4j executable.
+apply plugin: edu.sc.seis.launch4j.Launch4jPlugin
+
+// For the versioning plugin to work the root project must contain a .git directory.
+apply plugin: net.nemerosa.versioning.VersioningPlugin
+
+/**
+ * Add an extension variable for the config directory.
+ */
+ext {
+	distDir = file('dist', PathValidation.DIRECTORY )
+	loggingDir = file('logging', PathValidation.DIRECTORY )
+}
+
+/**
+ * JAR pluigin.
+ * https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
+ */
+jar {
+	Date buildTimeAndDate = new Date()
+    def buildDate = new java.text.SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
+    def buildTime = new java.text.SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
+    def buildJVM = String.format('%s (%s %s)',
+    	System.properties['java.version'],
+    	System.properties['java.vendor'],
+    	System.properties['java.vm.version'])
+    def buildUser = System.properties['user.name']
+
+    manifest {
+        attributes (
+            'Built-By': buildUser,
+            'Created-By': buildJVM,
+            'Build-Date': buildDate,
+            'Build-Time': buildTime,
+            'Build-Revision': versioning.info.commit,
+            'Specification-Title': project.description,
+            'Specification-Version': project.version,
+            'Implementation-Title': project.programName,
+            'Implementation-Version': project.version,
+            'Main-Class': project.mainClassName )
+    }
+
+    metaInf {
+    	from(project.projectDir) {
+    		include 'LICENSE*'
+    	}
+    }
+
+	doFirst { manifest.attributes.sort().each { println "MANIFEST: ${it}" } }
+}
+
+/**
+ * Launch4j plugin.
+ * https://github.com/TheBoegl/gradle-launch4j
+ */
+task createLaunch4j(type: edu.sc.seis.launch4j.tasks.Launch4jLibraryTask) {
+    group = 'launch4j'
+    description = "Create the ${outfile} launcher."
+
+    outfile = "${project.programName}.exe"
+    mainClassName = project.mainClassName
+    fileDescription = project.description
+    icon = "${projectDir}/${project.programIcon}"
+    headerType = 'console'
+    copyright = project.copyright
+    dontWrapJar = true
+    textVersion = project.version
+}
+
+// required for the ant filter in copy
+import org.apache.tools.ant.filters.LineContains
+
+/**
+ * This block is added by the application plugin:
+ * https://docs.gradle.org/current/userguide/application_plugin.html
+ * Also see CopySpec:
+ * https://docs.gradle.org/current/javadoc/org/gradle/api/file/CopySpec.html
+ */
+startScripts {
+	group = 'distribution'
+	description = "Create the ${project.programName} launch scripts."
+
+	outputDir = new File(project.buildDir, 'scripts')
+	mainClassName = project.mainClassName
+	applicationName = project.programName
+	classpath = files(configurations.runtime, jar.outputs)
+
+	doLast {
+		copy {
+            from outputDir
+            into outputDir
+
+            // the new file should have the *.sh extension
+            include project.programName
+        	rename project.programName, "${project.programName}.sh"
+
+            // we need to remove this line to make the script work:
+            //     cd "`dirname \"$PRG\"`/.." >/dev/null
+            filter(LineContains, contains:['dirname \\"$PRG\\"`/.."'], negate:'true')
+		}
+	}
+}
+
+/**
+ * The below block determines the files that get copied into the distribution.
+ * We create a new distribution called 'launch4j' because 'main' has a different organization.
+ * https://docs.gradle.org/current/userguide/distribution_plugin.html
+ */
+distributions {
+    launch4j {
+        baseName = project.name
+    	contents {
+            from(project.distDir) {
+            	include 'README.*'
+            }
+            from(createLaunch4j.outputs) {  include '*.exe' }
+            from(startScripts.outputs) {
+            	include '*.sh'
+            	fileMode 0755
+            }
+            into('lib/config') {
+            	from(project.loggingDir) { include 'logback.xml' }
+            }
+        }
+    }
+}

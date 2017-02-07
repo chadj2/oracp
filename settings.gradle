@@ -9,13 +9,12 @@
  * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
  */
  
+/*
+// To declare projects as part of a multi-project build use the 'include' method
+include 'shared'
+include 'api'
+include 'services:webservice'
+*/
+//include 'launch'
 
-//pluginRepositories {
-//	maven {
-//		url 'https://dl.bintray.com/content/aalmiray/kordamp'
-//	}
-//	gradlePluginPortal()
-//}
-
-include 'launch'
 rootProject.name = 'oracp'
