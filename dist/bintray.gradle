@@ -1,0 +1,129 @@
+/*
+ * Gradle Bintray Configuration
+ * Copyright 2016 by Chad Juliano
+ *
+ * $Id: 29565e145c1d9c03ddfea55cb38012bb83c9dad1 $
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath group: 'com.jfrog.bintray.gradle', name: 'gradle-bintray-plugin', version: '1.7.3'
+        classpath group: 'ru.vyarus', name: 'gradle-pom-plugin', version: '1.1.0'
+        classpath group: 'ru.vyarus', name: 'gradle-github-info-plugin', version: '1.1.0'
+    }
+}
+
+apply plugin: ru.vyarus.gradle.plugin.pom.PomPlugin
+
+apply plugin: ru.vyarus.gradle.plugin.github.GithubInfoPlugin
+
+apply plugin: com.jfrog.bintray.gradle.BintrayPlugin
+
+/**
+ * from github-info plugin. This adds details to the pom.
+ * https://github.com/xvik/gradle-github-info-plugin
+ */
+github {
+    user 'chadj2'
+    license 'LGPLv3'
+}
+
+/**
+ * from POM plugin. Simplifies pom generation.
+ * https://github.com/xvik/gradle-pom-plugin
+ */
+pom {
+    developers {
+        developer {
+            id 'chadj2'
+            name 'Chad Juliano'
+            email 'chadj@dallaslife.net'
+        }
+    }
+}
+
+/**
+ * from JFrog Bintray plugin. Simplifies pom generation.
+ * https://github.com/bintray/gradle-bintray-plugin#readme
+ */
+bintray {
+    // these should be configured in $HOME/.gradle/gradle.properties
+    user = findProperty('bintrayUser')
+    key = findProperty('bintrayKey')
+
+    publications = ['mavenJava']
+    dryRun = false
+    override = true
+    publish = true
+
+    pkg {
+        repo = 'cmd-utils'
+        name = project.name
+        desc = project.description
+        licenses = ['LGPL-3.0']
+        publicDownloadNumbers = true
+        version {
+            name = project.version
+            released  = new Date()
+            vcsTag = 'v' + project.version
+        }
+    }
+}
+
+/**
+ * This works around a problem of adding the binary distribution to
+ * the download list.
+ */
+task setDownloadList {
+    group = 'publishing'
+    description = "Set the download attribute."
+
+    doLast {
+
+        if(bintray.publications.size() != 1)
+        {
+            throw new GradleException('You must have a single publication configured.')
+        }
+
+        def _publicationName = bintray.publications[0]
+        def _publication = publishing.publications.getByName(_publicationName)
+        def _artifacts = bintrayUpload.collectArtifacts(_publication)
+
+        logger.info('Searching for zip artifact in publication: {}', _publication.name);
+
+        def _zipArtifact = _artifacts.find { it.type == 'zip' }
+        if(_zipArtifact == null)
+        {
+            throw new GradleException('Could not find zip artifact for publication: ${_publication.name}')
+        }
+
+        logger.info('Setting download list for artifact: {}', _zipArtifact.file.getName());
+
+        def _filePath = _zipArtifact.getPath()
+        def _subject = bintrayUpload.user
+        def _uploadUri = "/file_metadata/${_subject}/${bintrayUpload.repoName}/${_filePath}"
+
+        def _http = com.jfrog.bintray.gradle.BintrayHttpClientFactory.create(
+                bintrayUpload.apiUrl,
+                bintrayUpload.user,
+                bintrayUpload.apiKey)
+
+        _http.request(groovyx.net.http.Method.PUT, groovyx.net.http.ContentType.JSON) {
+            uri.path = _uploadUri
+            body = [list_in_downloads: true]
+
+            response.success = { resp ->
+                logger.info('File added to download list: {}', _filePath)
+            }
+
+            response.failure = { resp, reader ->
+                throw new GradleException("Failed to set download list for file: ${_filePath}")
+            }
+        }
+    }
+}
+

@@ -1,23 +1,19 @@
-/**
- * ORACP - Database Copy utility
+/*
+ * ORACP build configuration.
+ * Copyright 2016 by Chad Juliano
  *
- *  Copyright 2016 by Chad Juliano
- *
- *  Licensed under GNU Lesser General Public License v3.0 only.
- *  Some rights reserved. See LICENSE.
- *
- * @license LGPL-3.0 <http://spdx.org/licenses/LGPL-3.0>
+ * $Id: 29565e145c1d9c03ddfea55cb38012bb83c9dad1 $
  */
 
 plugins {
     id 'project-report'
-    id 'ru.vyarus.pom' version '1.1.0'
-    id 'ru.vyarus.github-info' version '1.1.0'
 }
 
 repositories {
     mavenLocal()
-    jcenter()
+    maven {
+        url  'http://dl.bintray.com/chadj2/cmd-utils'
+    }
     maven {
         // We use the https://maven.oracle.com repository to download ojdbc.jar. Unfortunately
         // the type of authentication it uses is not supported by Gradle. As an alternative
@@ -31,10 +27,12 @@ repositories {
             password 'password'
         }
     }
+    jcenter()
 }
 
 // include tasks and configuration to bundle this project as a launch4j executable.
 apply from: 'dist/launch4j.gradle'
+apply from: 'dist/bintray.gradle'
 apply from: 'dist/debug.gradle'
 
 dependencies {
@@ -67,13 +65,13 @@ distributions {
         contents {
             with(distributions.launch4j.contents)
             from(project.projectDir) {
-            	include 'LICENSE.*'
+                include 'LICENSE.*'
             }
             from(project.distDir) {
-            	include '*.sql'
+                include '*.sql'
             }
             into('lib') {
-            	exclude 'config'
+                exclude 'config'
                 from configurations.runtime.files { dep -> dep.name != 'ojdbc7' }
                 from(jar.outputs.files)
             }
@@ -83,12 +81,12 @@ distributions {
 
     ojdbc7 {
         contents {
-    		with(distributions.launch4j.contents)
+            with(distributions.launch4j.contents)
             from(project.distDir) {
-            	include '*.sql'
+                include '*.sql'
             }
             into('lib') {
-            	exclude 'config'
+                exclude 'config'
                 from configurations.runtime.files
                 from(jar.outputs.files)
             }
@@ -117,29 +115,6 @@ test {
 }
 
 /**
- * from github-info plugin. This adds details to the pom.
- * https://github.com/xvik/gradle-github-info-plugin
- */
-github {
-    user 'chadj2'
-    license 'LGPLv3'
-}
-
-/**
- * from POM plugin. Simplifies pom generation.
- * https://github.com/xvik/gradle-pom-plugin
- */
-pom {
-    developers {
-        developer {
-            id 'chadj2'
-            name 'Chad Juliano'
-            email 'chadj@dallaslife.net'
-        }
-    }
-}
-
-/**
  * From the maven-publish plugin.
  * https://docs.gradle.org/current/userguide/maven_plugin.html
  */
@@ -147,11 +122,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-        }
-    }
-    repositories {
-        maven {
-            url "$buildDir/repo"
+            artifact noOjdbc7DistZip
         }
     }
 }

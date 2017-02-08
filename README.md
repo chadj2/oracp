@@ -1,5 +1,8 @@
 # ORACP File Transfer Utility
 
+[ ![Download](https://api.bintray.com/packages/chadj2/cmd-utils/oracp/images/download.svg) ][BINTRAY-LATEST]
+[BINTRAY-LATEST]: <https://bintray.com/chadj2/cmd-utils/oracp/_latestVersion>
+
 This program is a command line utility that can perform file operations over an
 [Oracle JDBC connection][OJDBC]. It can simplify the transfer of files between a client and
 the database compared to approaches like SFTP.
@@ -22,8 +25,10 @@ example it can transfer a datapump dump file before running the import or export
 - [Building](#building)
     - [Gradle Installation](#gradle-installation)
     - [OTN Maven Configuration](#otn-maven-configuration)
+    - [Bintray Maven Configuration](#bintray-maven-configuration)
     - [Build Tasks](#build-tasks)
 - [Tests](#tests)
+- [See Also](#see-also)
 - [Author](#author)
 - [License](#license)
 
@@ -69,7 +74,8 @@ Terminating: Help option requested
 
 1. Confirm that you have a copy of [Java 1.8][JRE-DOWNLOAD].
 
-1. Download the [latest release][LATEST-RELEASE] and extract the archive.
+1. Download a binary distribution from the Bintray *download button* at the top of this page. From the
+Bintray page scroll down and you will see a **zip** file under the **Downloads** heading.
 
 1. Download [Oracle JDBC 7][ORACLE-JDBC] **ojdbc7-12.1.0.2.jar** and place it in the extracted lib folder. You may need
 a an [OTN login][OTN-ACCOUNT] if prompted for credentials.
@@ -78,11 +84,10 @@ a an [OTN login][OTN-ACCOUNT] if prompted for credentials.
 **oracp.sh**.
 
 1. Before you can run the directory list task you will need to create the **fn_list_dir** function with the included
-create script **fn_list_dir.sql**. It must be run as the SYS user.
+create script [fn_list_dir.sql](dist/fn_list_dir.sql). It must be run as the SYS user.
 
 [JRE-DOWNLOAD]: <http://www.oracle.com/technetwork/java/javase/downloads/index.html>
 [ORACLE-JDBC]: <http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html>
-[LATEST-RELEASE]: <https://github.com/chadj2/oracp/releases/latest>
 [OTN-ACCOUNT]: <https://profile.oracle.com/myprofile/account/create-account.jspx>
 
 ## Task Execution
@@ -192,6 +197,23 @@ maven {
 }
 ```
 
+### Bintray Maven Configuration
+
+You can reference oracp as a library from the [Bintray][BINTRAY] repository. Add the following
+repository and dependency to your Gradle script.
+
+[BINTRAY]: <https://bintray.com/chadj2/cmd-utils/oracp>
+
+```gradle
+maven {
+    url  'http://dl.bintray.com/chadj2/cmd-utils'
+}
+
+dependencies {
+    compile group: 'org.taskdriver', name: 'oracp', version: '1.1.0'
+}
+```
+
 ### Build Tasks
 
 Important Gradle tasks are:
@@ -228,6 +250,10 @@ test {
 }
 ```
 
+## See Also
+
+* [Task Driver](https://github.com/chadj2/task-driver/): Command line framework used by ORACP.
+
 ## Author
 
 - [Chad Juliano](https://github.com/chadj2)
@@ -237,8 +263,8 @@ test {
 This program is licensed under [GNU Lesser General Public License v3.0 only][LGPL-3.0].
 Some rights reserved. See [LICENSE][].
 
-![](images/lgplv3b-72.png "LGPL-3.0")
-![](images/spdx-72.png "SPDX")
+[ ![](images/lgplv3b-72.png "LGPL-3.0") ][LGPL-3.0]
+[ ![](images/spdx-72.png "SPDX") ][LGPL-3.0]
 
 [LGPL-3.0]: <https://spdx.org/licenses/LGPL-3.0>
 [LICENSE]: <LICENSE.md>
