@@ -1,16 +1,19 @@
-/**
+/*
+ * Gradle Launch4J configuration
+ * Copyright 2016 by Chad Juliano
+ *
  * $Id: 29565e145c1d9c03ddfea55cb38012bb83c9dad1 $
  */
 
 buildscript {
-	repositories {
-	    jcenter()
-	}
+    repositories {
+        jcenter()
+    }
 
-	dependencies {
-		classpath group: 'edu.sc.seis.gradle', name: 'launch4j', version: '2.3.0'
-		classpath group: 'net.nemerosa', name: 'versioning', version: '2.5.1'
-	}
+    dependencies {
+        classpath group: 'edu.sc.seis.gradle', name: 'launch4j', version: '2.3.0'
+        classpath group: 'net.nemerosa', name: 'versioning', version: '2.5.1'
+    }
 }
 
 /**
@@ -29,8 +32,8 @@ apply plugin: net.nemerosa.versioning.VersioningPlugin
  * Add an extension variable for the config directory.
  */
 ext {
-	distDir = file('dist', PathValidation.DIRECTORY )
-	loggingDir = file('logging', PathValidation.DIRECTORY )
+    distDir = file('dist', PathValidation.DIRECTORY )
+    loggingDir = file('logging', PathValidation.DIRECTORY )
 }
 
 /**
@@ -38,13 +41,13 @@ ext {
  * https://docs.gradle.org/current/dsl/org.gradle.api.tasks.bundling.Jar.html
  */
 jar {
-	Date buildTimeAndDate = new Date()
+    Date buildTimeAndDate = new Date()
     def buildDate = new java.text.SimpleDateFormat('yyyy-MM-dd').format(buildTimeAndDate)
     def buildTime = new java.text.SimpleDateFormat('HH:mm:ss.SSSZ').format(buildTimeAndDate)
     def buildJVM = String.format('%s (%s %s)',
-    	System.properties['java.version'],
-    	System.properties['java.vendor'],
-    	System.properties['java.vm.version'])
+        System.properties['java.version'],
+        System.properties['java.vendor'],
+        System.properties['java.vm.version'])
     def buildUser = System.properties['user.name']
 
     manifest {
@@ -62,12 +65,12 @@ jar {
     }
 
     metaInf {
-    	from(project.projectDir) {
-    		include 'LICENSE*'
-    	}
+        from(project.projectDir) {
+            include 'LICENSE*'
+        }
     }
 
-	doFirst { manifest.attributes.sort().each { println "MANIFEST: ${it}" } }
+    doFirst { manifest.attributes.sort().each { println "MANIFEST: ${it}" } }
 }
 
 /**
@@ -98,28 +101,28 @@ import org.apache.tools.ant.filters.LineContains
  * https://docs.gradle.org/current/javadoc/org/gradle/api/file/CopySpec.html
  */
 startScripts {
-	group = 'distribution'
-	description = "Create the ${project.programName} launch scripts."
+    group = 'distribution'
+    description = "Create the ${project.programName} launch scripts."
 
-	outputDir = new File(project.buildDir, 'scripts')
-	mainClassName = project.mainClassName
-	applicationName = project.programName
-	classpath = files(configurations.runtime, jar.outputs)
+    outputDir = new File(project.buildDir, 'scripts')
+    mainClassName = project.mainClassName
+    applicationName = project.programName
+    classpath = files(configurations.runtime, jar.outputs)
 
-	doLast {
-		copy {
+    doLast {
+        copy {
             from outputDir
             into outputDir
 
             // the new file should have the *.sh extension
             include project.programName
-        	rename project.programName, "${project.programName}.sh"
+            rename project.programName, "${project.programName}.sh"
 
             // we need to remove this line to make the script work:
             //     cd "`dirname \"$PRG\"`/.." >/dev/null
             filter(LineContains, contains:['dirname \\"$PRG\\"`/.."'], negate:'true')
-		}
-	}
+        }
+    }
 }
 
 /**
@@ -130,17 +133,17 @@ startScripts {
 distributions {
     launch4j {
         baseName = project.name
-    	contents {
+        contents {
             from(project.distDir) {
-            	include 'README.*'
+                include 'README.*'
             }
             from(createLaunch4j.outputs) {  include '*.exe' }
             from(startScripts.outputs) {
-            	include '*.sh'
-            	fileMode 0755
+                include '*.sh'
+                fileMode 0755
             }
             into('lib/config') {
-            	from(project.loggingDir) { include 'logback.xml' }
+                from(project.loggingDir) { include 'logback.xml' }
             }
         }
     }
