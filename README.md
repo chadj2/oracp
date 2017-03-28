@@ -1,7 +1,6 @@
 # ORACP File Transfer Utility
 
-[ ![Download](https://api.bintray.com/packages/chadj2/cmd-utils/oracp/images/download.svg) ][BINTRAY-LATEST]
-[BINTRAY-LATEST]: <https://bintray.com/chadj2/cmd-utils/oracp/_latestVersion>
+[ ![Download](https://api.bintray.com/packages/chadj2/cmd-utils/oracp/images/download.svg) ](https://bintray.com/chadj2/cmd-utils/oracp/_latestVersion)
 
 This program is a command line utility that can perform file operations over an
 [Oracle JDBC connection][OJDBC]. It can simplify the transfer of files between a client and
